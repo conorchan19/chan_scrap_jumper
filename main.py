@@ -5,6 +5,8 @@
 # update
 # draw
 
+# yay I can use github from VS CODE
+
 import math
 import random
 import sys
