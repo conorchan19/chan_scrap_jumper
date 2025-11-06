@@ -16,22 +16,18 @@ class Player(Sprite):
         # creates the sprite
         Sprite.__init__(self)
         self.game = game
-        self.sprite_sheet = Spritesheet(path.join(self.game.img_folder, "player_spritesheet.png"))
+        # sprite animation
+        self.sprite_sheet = Spritesheet(path.join(self.game.img_folder, "Triple_T.png"))
+        # loads images for animation
         self.load_images()
+        # adding player image
         self.image = pg.Surface(TILESIZE)
         self.image = game.player_img
         self.image.set_colorkey(BLACK)
         self.image_inv = game.player_img_inv
-        # how big the sprite is
-       # self.image = pg.Surface(TILESIZE)
-        # sprite color
-        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
-        # sprite coordinates
-        # self.rect.x = x * TILESIZE[0]
-        # self.rect.y = y * TILESIZE[1]
         # velocity
-        self.vel = vec(0, 0)
+        self.vel = vec(0, GRAVITY)
         # position
         self.pos = vec(x, y) * TILESIZE[0]
         # speed
@@ -43,20 +39,39 @@ class Player(Sprite):
         # cooldown
         self.cd = Cooldown(1000)
         # jump
-        self.jump_strength = -10
+        self.jump_count = 0
+        self.jump_max = 2
+        self.jump_strength = 100
+        # direction
         self.dir = vec(0, 0)
+        # animation
         self.walking = False
         self.jumping = False
         self.last_update = 0
         self.current_frame = 0
+    def jump(self):
+        # jump only if standing on a platform
+        self.rect.y += 1
+        hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
+        self.rect.y += -1
+        # double jump
+        if hits:
+            self.vel.y = -self.jump_strength
+        if self.jump_count < self.jump_max:
+            self.vel.y = -self.jump_strength
+            self.jump_count += 1
     def load_images(self):
-        self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32).
-                                self.spritesheet.get_image(0, 32, 32, 32)]
+        # loads images for animation
+        self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32),
+                                self.sprite_sheet.get_image(0, 32, 32, 32)]
+        # sets colorkey for transparency
         for frame in self.standing_frames:
             frame.set_colorkey(BLACK)
     def animate(self):
+        # handles animation
         now = pg.time.get_ticks()
         if not self.jumping and not self.walking:
+            # handles standing animation
             if now - self.last_update > 350:
                 self.last_update = now
                 self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
@@ -65,12 +80,13 @@ class Player(Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.bottom = bottom
     def get_keys(self):
-        self.vel = vec(0, 0)
+        self.vel = vec(0, GRAVITY)
         keys = pg.key.get_pressed()
         # when space is pressed the player shoots
         if keys[pg.K_SPACE]:
-            self.vel[1] = self.jump_strength
-            #p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
+                self.jump()
+        if keys[pg.K_e]:
+            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
         # when w is pressed the player moves up
         if keys[pg.K_w]:
             self.vel.y = -self.speed * self.game.dt
@@ -130,6 +146,8 @@ class Player(Sprite):
                 self.coins += 1
     def update(self):
         self.get_keys()
+        # handles animation
+        self.animate()
         # moves the player
         self.pos += self.vel
         self.rect.x = self.pos.x
@@ -144,11 +162,6 @@ class Player(Sprite):
         self.collide_with_stuff(self.game.all_mobs, False)
         # makes coin disappear
         self.collide_with_stuff(self.game.all_coins, True)
-        if not self.cd.ready():
-            self.image = self.game.player_img
-        else:
-            self.image = self.game.player_img_inv
-
 
 class Mob(Sprite):
     def __init__(self, game, x, y):
@@ -157,10 +170,14 @@ class Mob(Sprite):
         # creates the mob
         Sprite.__init__(self)
         self.game = game
-        # how big the mob is
-        self.image = pg.Surface((32, 32))
-        # mob color
-        self.image.fill(RED)
+        # sprite animation
+        self.sprite_sheet = Spritesheet(path.join(self.game.img_folder, "Bombardillo_Crocodillo.png"))
+        self.load_images()
+        # adding mob image
+        self.image = pg.Surface(TILESIZE)
+        self.image = game.player_img
+        self.image.set_colorkey(BLACK)
+        self.image_inv = game.player_img_inv
         self.rect = self.image.get_rect()
         # velocity
         self.vel =vec(choice([-1,1]), choice([-1,1]))
@@ -169,6 +186,28 @@ class Mob(Sprite):
         # speed
         self.speed = 5
         print(self.pos)
+        # animation
+        self.jumping = False
+        self.walking = False
+        self.last_update = 0
+        self.current_frame = 0
+    def load_images(self):
+        self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32),
+                                self.sprite_sheet.get_image(0, 32, 32, 32)]
+        for frame in self.standing_frames:
+            frame.set_colorkey(BLACK)
+    def animate(self):
+        # handles animation
+        now = pg.time.get_ticks()
+        # handles standing animation
+        if not self.jumping and not self.walking:
+            if now - self.last_update > 350:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
+                bottom = self.rect.bottom
+                self.image = self.standing_frames[self.current_frame]
+                self.rect = self.image.get_rect()
+                self.rect.bottom = bottom
     def collide_with_walls(self, dir):
         # handles collision with walls
         if dir == "x":
@@ -194,7 +233,8 @@ class Mob(Sprite):
                 # bounces off in random direction
                 self.vel *= choice([-1,1])
     def update(self):
-        pass
+        # handles animation
+        self.animate()
         # mob behavior
         if self.game.player.pos.x > self.pos.x:
             self.vel.x = 1

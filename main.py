@@ -11,8 +11,6 @@ import math
 import random
 import sys
 from typing import List, Tuple, Optional
-
-
 import pygame as pg
 from settings import *
 from sprites import *
