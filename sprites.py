@@ -42,6 +42,8 @@ class Player(Sprite):
         self.jump_count = 0
         self.jump_max = 2
         self.jump_strength = 100
+    # jump input edge detection (prevents holding space to spam jumps)
+        self.jump_pressed = False
         # direction
         self.dir = vec(0, 0)
         # animation
@@ -50,13 +52,16 @@ class Player(Sprite):
         self.last_update = 0
         self.current_frame = 0
     def jump(self):
-        # jump only if standing on a platform
+        # check if standing on a platform (simple grounded check)
         self.rect.y += 1
         hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
-        self.rect.y += -1
-        # double jump
+        self.rect.y -= 1
+
+        # if touching ground, ensure jump_count is reset
         if hits:
-            self.vel.y = -self.jump_strength
+            self.jump_count = 0
+
+        # allow jump if we haven't exceeded max jumps
         if self.jump_count < self.jump_max:
             self.vel.y = -self.jump_strength
             self.jump_count += 1
@@ -64,9 +69,11 @@ class Player(Sprite):
         # loads images for animation
         self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32),
                                 self.sprite_sheet.get_image(0, 32, 32, 32)]
-        # sets colorkey for transparency
-        for frame in self.standing_frames:
+        # sets colorkey for transparency and scale to TILESIZE
+        for i, frame in enumerate(self.standing_frames):
             frame.set_colorkey(BLACK)
+            img = pg.transform.scale(frame, TILESIZE)
+            self.standing_frames[i] = img
     def animate(self):
         # handles animation
         now = pg.time.get_ticks()
@@ -82,23 +89,21 @@ class Player(Sprite):
     def get_keys(self):
         self.vel = vec(0, GRAVITY)
         keys = pg.key.get_pressed()
-        # when space is pressed the player shoots
-        if keys[pg.K_SPACE]:
-                self.jump()
-        if keys[pg.K_e]:
-            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
-        # when w is pressed the player moves up
+        # when space is pressed the player jumps (edge-detected)
         if keys[pg.K_w]:
-            self.vel.y = -self.speed * self.game.dt
-            self.dir = (0, -1)
+            if not self.jump_pressed:
+                # key was just pressed
+                self.jump()
+                self.jump_pressed = True
+        else:
+            # key released
+            self.jump_pressed = False
+        if keys[pg.K_SPACE]:
+            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
         # when a is pressed the player moves to the left
         if keys[pg.K_a]:
             self.vel.x = -self.speed * self.game.dt
             self.dir = (-1, 0)
-        # when s is pressed the player moves down
-        if keys[pg.K_s]:
-            self.vel.y = self.speed * self.game.dt
-            self.dir = (0, 1)
         # when d is pressed the player moves to the right
         if keys[pg.K_d]:
             self.vel.x = self.speed * self.game.dt
@@ -128,6 +133,7 @@ class Player(Sprite):
             if hits:
                 if self.vel.y > 0:
                     self.pos.y = hits[0].rect.top - self.rect.height
+                    self.jump_count = 0
                 if self.vel.y < 0:
                     self.pos.y = hits[0].rect.bottom
                 self.vel.y = 0
@@ -167,8 +173,6 @@ class Mob(Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.all_mobs
         Sprite.__init__(self, self.groups)
-        # creates the mob
-        Sprite.__init__(self)
         self.game = game
         # sprite animation
         self.sprite_sheet = Spritesheet(path.join(self.game.img_folder, "Bombardillo_Crocodillo.png"))
@@ -194,8 +198,13 @@ class Mob(Sprite):
     def load_images(self):
         self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32),
                                 self.sprite_sheet.get_image(0, 32, 32, 32)]
-        for frame in self.standing_frames:
+        # sets colorkey for transparency and scale to TILESIZE
+        for i, frame in enumerate(self.standing_frames):
             frame.set_colorkey(BLACK)
+            img = pg.transform.scale(frame, TILESIZE)
+            self.standing_frames[i] = img
+    def shoot(self):
+        p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
     def animate(self):
         # handles animation
         now = pg.time.get_ticks()
@@ -233,19 +242,9 @@ class Mob(Sprite):
                 # bounces off in random direction
                 self.vel *= choice([-1,1])
     def update(self):
+        self.shoot()
         # handles animation
         self.animate()
-        # mob behavior
-        if self.game.player.pos.x > self.pos.x:
-            self.vel.x = 1
-        else:
-            self.vel.x = -1
-            print("I don't need to chase the player x")
-        if self.game.player.pos.y > self.pos.y:
-            self.vel.y = 1
-        else:
-            self.vel.y = -1
-            print("I don't need to chase the player x")
         self.pos += self.vel * self.speed
         self.rect.x = self.pos.x
         self.collide_with_walls('x')
@@ -311,10 +310,6 @@ class PewPew(Sprite):
         self.pos += self.vel * self.speed
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
-        # pewpew collides with wall 
-        hits_wall = pg.sprite.spritecollide(self, self.game.all_walls, True)
-        if hits_wall:
-            self.kill()
         # pewpew collides with mob
         hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, True)
         if hits_mob:

@@ -77,6 +77,8 @@ class Game:
     def update(self):
         # creates a countdown timer
         self.all_sprites.update()
+        # handle pewpew vs mob collisions: pewpew kills mob and pewpew is removed
+        hits = pg.sprite.groupcollide(self.all_mobs, self.all_pewpews, True, True)
         countdown = 10
         seconds = pg.time.get_ticks()//1000
         self.time = countdown - seconds
