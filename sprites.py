@@ -32,8 +32,6 @@ class Player(Sprite):
         self.pos = vec(x, y) * TILESIZE[0]
         # speed
         self.speed = 250
-        # health
-        self.health = HEALTH
         # coins
         self.coins = 0
         # cooldown
@@ -143,12 +141,8 @@ class Player(Sprite):
         hits = pg.sprite.spritecollide(self, group, kill)
         # collides with mob
         if hits: 
-            if str(hits[0].__class__.__name__) == "Mob":
-                if self.cd.ready():
-                    self.health -= 10
-                    self.cd.start()
         # collides with coin
-            elif str(hits[0].__class__.__name__) == "Coin":
+            if str(hits[0].__class__.__name__) == "Coin":
                 self.coins += 1
     def update(self):
         self.get_keys()
@@ -161,9 +155,6 @@ class Player(Sprite):
         self.collide_with_walls("x")
         self.rect.y = self.pos.y
         self.collide_with_walls("y")
-        # kills game if player is dead
-        if self.health == 0:
-            self.game.playing = False
         # makes mob collide
         self.collide_with_stuff(self.game.all_mobs, False)
         # makes coin disappear
@@ -190,6 +181,7 @@ class Mob(Sprite):
         # speed
         self.speed = 5
         print(self.pos)
+        self.shoot_cooldown = Cooldown(2000)
         # animation
         self.jumping = False
         self.walking = False
@@ -204,7 +196,10 @@ class Mob(Sprite):
             img = pg.transform.scale(frame, TILESIZE)
             self.standing_frames[i] = img
     def shoot(self):
-        p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
+        if self.shoot_cooldown.ready():
+            self.dir = choice([(1,0), (-1,0), (0,1), (0,-1)])
+            PewPew(self.game, self.rect.x, self.rect.y, self.dir)
+            self.shoot_cooldown.start()
     def animate(self):
         # handles animation
         now = pg.time.get_ticks()
@@ -258,8 +253,11 @@ class Coin(Sprite):
         Sprite.__init__(self, self.groups)
         # creates the coin
         self.game = game
-        self.image = pg.Surface(TILESIZE)
-        self.image.fill(GOLD)
+        # sprite
+        self.image = pg.Surface((32, 32))
+        self.image = game.coin_img
+        # self.image = pg.Surface(TILESIZE)
+        # self.image.fill(GOLD)
         self.rect = self.image.get_rect()
         self.rect.x = x * TILESIZE[0]
         self.rect.y = y * TILESIZE[1]
@@ -305,6 +303,8 @@ class PewPew(Sprite):
         self.pos = vec(x, y)
         # speed
         self.speed = 10
+        # health
+        self.health = HEALTH
     def update(self):
         # pewpew behavior
         self.pos += self.vel * self.speed
@@ -314,3 +314,8 @@ class PewPew(Sprite):
         hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, True)
         if hits_mob:
             self.kill()
+        hits_player = pg.sprite.spritecollide(self, self.game.all_sprites, False)
+        if hits_player:
+            self.health -= 10
+            if self.health <= 0:
+                self.kill()

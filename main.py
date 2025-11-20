@@ -32,6 +32,8 @@ class Game:
         self.img_folder = path.join(self.game_folder, "images")
         self.player_img = pg.image.load(path.join(self.img_folder, "player.png")).convert_alpha()
         self.player_img_inv = pg.image.load(path.join(self.img_folder, 'player.png')).convert_alpha()
+        self.coin_img = pg.image.load(path.join(self.img_folder, "Brr_Brr.png")).convert_alpha()
+
     def new(self):
         # the sprite Group allows us to update and draw sprite in grouped batches
         self.load_data()
@@ -98,7 +100,7 @@ class Game:
     def draw(self):
         # calls on draw_text
         self.screen.fill(WHITE)
-        self.draw_text(self.screen, str(self.player.health), 24, BLACK, 100, 100)
+        #self.draw_text(self.screen, str(self.player.health), 24, BLACK, 100, 100)
         self.draw_text(self.screen, str(self.player.coins), 24, BLACK, 400, 400)
         self.draw_text(self.screen, str(self.time), 24, BLACK, 100, 400)
         self.all_sprites.draw(self.screen)
