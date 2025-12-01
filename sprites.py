@@ -97,7 +97,7 @@ class Player(Sprite):
             # key released
             self.jump_pressed = False
         if keys[pg.K_SPACE]:
-            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir)
+            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir, owner=self, bullet_type="player")
         # when a is pressed the player moves to the left
         if keys[pg.K_a]:
             self.vel.x = -self.speed * self.game.dt
@@ -175,7 +175,7 @@ class Mob(Sprite):
         self.image_inv = game.player_img_inv
         self.rect = self.image.get_rect()
         # velocity
-        self.vel =vec(choice([-1,1]), choice([-1,1]))
+        self.vel = vec(choice([-1,1]), choice([-1,1]))
         # position
         self.pos = vec(x, y) * TILESIZE[0]
         # speed
@@ -198,7 +198,10 @@ class Mob(Sprite):
     def shoot(self):
         if self.shoot_cooldown.ready():
             self.dir = choice([(1,0), (-1,0), (0,1), (0,-1)])
-            PewPew(self.game, self.rect.x, self.rect.y, self.dir)
+            # move bullet outside shooter
+            offset = vec(self.dir) * (TILESIZE[0] // 2)
+            spawn_pos = vec(self.rect.center) + offset
+            PewPew(self.game, spawn_pos.x, spawn_pos.y, self.dir, owner=self, bullet_type="mob")
             self.shoot_cooldown.start()
     def animate(self):
         # handles animation
@@ -224,7 +227,7 @@ class Mob(Sprite):
                 # self.vel.x = 0
                 self.rect.x = self.pos.x
                 # bounces off in random direction
-                self.vel *= choice([-1,1])
+                self.vel.x *= -1
         if dir == "y":
             hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
             if hits:
@@ -235,7 +238,7 @@ class Mob(Sprite):
                 # self.vel.y = 0
                 self.rect.y = self.pos.y
                 # bounces off in random direction
-                self.vel *= choice([-1,1])
+                self.vel.y *= -1
     def update(self):
         self.shoot()
         # handles animation
@@ -256,14 +259,21 @@ class Coin(Sprite):
         # sprite
         self.image = pg.Surface((32, 32))
         self.image = game.coin_img
-        # self.image = pg.Surface(TILESIZE)
-        # self.image.fill(GOLD)
         self.rect = self.image.get_rect()
         self.rect.x = x * TILESIZE[0]
         self.rect.y = y * TILESIZE[1]
+        self.vel = vec(0, GRAVITY)
     def update(self):
-        # coin behavior
-        pass
+        # gravity effect on coin
+        self.vel.y += GRAVITY
+        self.rect.y += self.vel.y
+        # wall
+        hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
+        if hits:
+        # place coin on top of wall
+            self.rect.bottom = hits[0].rect.top
+            self.vel.y = 0
+
 
 class Wall(Sprite):
     def __init__(self, game, x, y, state):
@@ -285,8 +295,11 @@ class Wall(Sprite):
         self.rect.y = self.pos.y
 
 class PewPew(Sprite):
-    def __init__(self, game, x, y, dir):
+    def __init__(self, game, x, y, dir, owner=None, bullet_type=None):
+        super().__init__(game.all_sprites, game.all_pewpews)
         self.game = game
+        self.owner = owner
+        self.bullet_type = bullet_type
         self.groups = game.all_sprites, game.all_pewpews
         Sprite.__init__(self, self.groups)
         # creates the mob
@@ -308,14 +321,25 @@ class PewPew(Sprite):
     def update(self):
         # pewpew behavior
         self.pos += self.vel * self.speed
-        self.rect.x = self.pos.x
-        self.rect.y = self.pos.y
-        # pewpew collides with mob
-        hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, True)
-        if hits_mob:
-            self.kill()
-        hits_player = pg.sprite.spritecollide(self, self.game.all_sprites, False)
-        if hits_player:
-            self.health -= 10
-            if self.health <= 0:
+        self.rect.center = self.pos
+
+
+        if self.bullet_type == "player":
+            hits = [m for m in pg.sprite.spritecollide(self, self.game.all_mobs, False) if m is not self.owner]
+            if hits:
                 self.kill()
+        elif self.bullet_type == "mob":
+            player = self.game.player
+        if self.rect.colliderect(player.rect) and player != self.owner:
+            self.kill()
+
+        # # pewpew collides with mob
+        # hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, False)
+        # if hits_mob:
+        #     self.kill()
+        # # pewpew collides with player
+        # hits_player = pg.sprite.spritecollide(self, [self.game.player], False)
+        # if hits_player:
+        #     self.health -= 100
+        #     if self.health <= 0:
+        #         self.kill()

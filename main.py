@@ -33,7 +33,6 @@ class Game:
         self.player_img = pg.image.load(path.join(self.img_folder, "player.png")).convert_alpha()
         self.player_img_inv = pg.image.load(path.join(self.img_folder, 'player.png')).convert_alpha()
         self.coin_img = pg.image.load(path.join(self.img_folder, "Brr_Brr.png")).convert_alpha()
-
     def new(self):
         # the sprite Group allows us to update and draw sprite in grouped batches
         self.load_data()
@@ -76,10 +75,35 @@ class Game:
                 self.playing = False
             if event.type == pg.MOUSEBUTTONDOWN:
                 print("I can get input from mousey mouse mouse")
+    def load_level(self, level):
+        self.map = Map(path.join(self.game_folder, level))
+        # clear existing sprites
+        self.all_sprites = pg.sprite.Group()
+        self.all_mobs = pg.sprite.Group()
+        self.all_coins = pg.sprite.Group()
+        self.all_walls = pg.sprite.Group()
+        self.all_pewpews = pg.sprite.Group()
+        # recreate sprites based on new level data
+        for row, tiles, in enumerate(self.map.data):
+            print(row)
+            for col, tile in enumerate(tiles):
+                if tile == "1":
+                    Wall(self, col, row, "")
+                elif tile == '2':
+                    Wall(self, col, row, "moveable")
+                elif tile == "C":
+                    Coin(self, col, row)
+                elif tile == "P":
+                    self.player = Player(self, col, row)
+                elif tile == "M":
+                    Mob(self, col, row)
     def update(self):
         # creates a countdown timer
         self.all_sprites.update()
-        # handle pewpew vs mob collisions: pewpew kills mob and pewpew is removed
+        # goes to level 2
+        if self.player.coins >= 10:
+            self.load_level("level2.txt")
+        # handle pewpew vs mob collisions
         hits = pg.sprite.groupcollide(self.all_mobs, self.all_pewpews, True, True)
         countdown = 10
         seconds = pg.time.get_ticks()//1000
