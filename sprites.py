@@ -87,7 +87,7 @@ class Player(Sprite):
     def get_keys(self):
         self.vel = vec(0, GRAVITY)
         keys = pg.key.get_pressed()
-        # when space is pressed the player jumps (edge-detected)
+        # when W is pressed the player jumps (edge-detected)
         if keys[pg.K_w]:
             if not self.jump_pressed:
                 # key was just pressed
@@ -96,8 +96,6 @@ class Player(Sprite):
         else:
             # key released
             self.jump_pressed = False
-        if keys[pg.K_SPACE]:
-            p = PewPew(self.game, self.rect.x, self.rect.y, self.dir, owner=self, bullet_type="player")
         # when a is pressed the player moves to the left
         if keys[pg.K_a]:
             self.vel.x = -self.speed * self.game.dt
@@ -201,7 +199,7 @@ class Mob(Sprite):
             # move bullet outside shooter
             offset = vec(self.dir) * (TILESIZE[0] // 2)
             spawn_pos = vec(self.rect.center) + offset
-            PewPew(self.game, spawn_pos.x, spawn_pos.y, self.dir, owner=self, bullet_type="mob")
+            PewPew(self.game, spawn_pos.x, spawn_pos.y, self.dir)
             self.shoot_cooldown.start()
     def animate(self):
         # handles animation
@@ -295,11 +293,9 @@ class Wall(Sprite):
         self.rect.y = self.pos.y
 
 class PewPew(Sprite):
-    def __init__(self, game, x, y, dir, owner=None, bullet_type=None):
+    def __init__(self, game, x, y, dir):
         super().__init__(game.all_sprites, game.all_pewpews)
         self.game = game
-        self.owner = owner
-        self.bullet_type = bullet_type
         self.groups = game.all_sprites, game.all_pewpews
         Sprite.__init__(self, self.groups)
         # creates the mob
@@ -323,23 +319,13 @@ class PewPew(Sprite):
         self.pos += self.vel * self.speed
         self.rect.center = self.pos
 
-
-        if self.bullet_type == "player":
-            hits = [m for m in pg.sprite.spritecollide(self, self.game.all_mobs, False) if m is not self.owner]
-            if hits:
-                self.kill()
-        elif self.bullet_type == "mob":
-            player = self.game.player
-        if self.rect.colliderect(player.rect) and player != self.owner:
+        # pewpew collides with mob
+        hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, False)
+        if hits_mob:
             self.kill()
-
-        # # pewpew collides with mob
-        # hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, False)
-        # if hits_mob:
-        #     self.kill()
-        # # pewpew collides with player
-        # hits_player = pg.sprite.spritecollide(self, [self.game.player], False)
-        # if hits_player:
-        #     self.health -= 100
-        #     if self.health <= 0:
-        #         self.kill()
+        # pewpew collides with player
+        hits_player = pg.sprite.spritecollide(self, [self.game.player], False)
+        if hits_player:
+            self.health -= 100
+            if self.health <= 0:
+                self.kill()

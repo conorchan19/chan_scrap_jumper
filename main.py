@@ -1,5 +1,5 @@
 # Created by Conor Chan with the help of Chat GPT
-# import necessary modules
+# import necesary modules
 # core game loop
 # input
 # update
