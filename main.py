@@ -1,5 +1,5 @@
 # Created by Conor Chan with the help of Chat GPT
-# import necesary modules
+# import necessary modules
 # core game loop
 # input
 # update
@@ -103,8 +103,8 @@ class Game:
         # goes to level 2
         if self.player.coins >= 10:
             self.load_level("level2.txt")
-        # handle pewpew vs mob collisions
-        hits = pg.sprite.groupcollide(self.all_mobs, self.all_pewpews, True, True)
+        if self.player.health <= 0:
+            self.load_level("GameOver.txt")
         countdown = 10
         seconds = pg.time.get_ticks()//1000
         self.time = countdown - seconds
@@ -124,9 +124,9 @@ class Game:
     def draw(self):
         # calls on draw_text
         self.screen.fill(WHITE)
-        #self.draw_text(self.screen, str(self.player.health), 24, BLACK, 100, 100)
-        self.draw_text(self.screen, str(self.player.coins), 24, BLACK, 400, 400)
-        self.draw_text(self.screen, str(self.time), 24, BLACK, 100, 400)
+        self.draw_text(self.screen, "Health: " + str(self.player.health), 24, BLACK, 100, 100)
+        self.draw_text(self.screen, "Coins: " + str(self.player.coins), 24, BLACK, 400, 400)
+      #  self.draw_text(self.screen, str(self.time), 24, BLACK, 100, 400)
         self.all_sprites.draw(self.screen)
         pg.display.flip()
 

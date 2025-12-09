@@ -36,6 +36,8 @@ class Player(Sprite):
         self.coins = 0
         # cooldown
         self.cd = Cooldown(1000)
+        # health
+        self.health = 3
         # jump
         self.jump_count = 0
         self.jump_max = 2
@@ -137,11 +139,17 @@ class Player(Sprite):
     def collide_with_stuff(self, group, kill):
         # makes collisions happen
         hits = pg.sprite.spritecollide(self, group, kill)
-        # collides with mob
         if hits: 
-        # collides with coin
+            # collides with coins
             if str(hits[0].__class__.__name__) == "Coin":
                 self.coins += 1
+            if str(hits[0].__class__.__name__) == "PewPew":
+                if self.cd.ready():
+                    self.health -= 1
+                    self.cd.start()
+                    if self.health <= 0:
+                        self.kill()
+
     def update(self):
         self.get_keys()
         # handles animation
@@ -153,10 +161,10 @@ class Player(Sprite):
         self.collide_with_walls("x")
         self.rect.y = self.pos.y
         self.collide_with_walls("y")
-        # makes mob collide
-        self.collide_with_stuff(self.game.all_mobs, False)
         # makes coin disappear
         self.collide_with_stuff(self.game.all_coins, True)
+        # collision with pewpews
+        self.collide_with_stuff(self.game.all_pewpews, True)
 
 class Mob(Sprite):
     def __init__(self, game, x, y):
@@ -298,12 +306,12 @@ class PewPew(Sprite):
         self.game = game
         self.groups = game.all_sprites, game.all_pewpews
         Sprite.__init__(self, self.groups)
-        # creates the mob
+        # creates the projectile
         Sprite.__init__(self)
         self.game = game
-        # how big the mob is
+        # how big the projectile is
         self.image = pg.Surface((16, 16))
-        # mob color
+        # projectile color
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         # velocity
@@ -312,20 +320,15 @@ class PewPew(Sprite):
         self.pos = vec(x, y)
         # speed
         self.speed = 10
-        # health
-        self.health = HEALTH
     def update(self):
         # pewpew behavior
         self.pos += self.vel * self.speed
         self.rect.center = self.pos
-
-        # pewpew collides with mob
-        hits_mob = pg.sprite.spritecollide(self, self.game.all_mobs, False)
-        if hits_mob:
-            self.kill()
         # pewpew collides with player
         hits_player = pg.sprite.spritecollide(self, [self.game.player], False)
         if hits_player:
-            self.health -= 100
-            if self.health <= 0:
-                self.kill()
+            self.kill()
+        # pewpew collides with walls
+        hits_wall = pg.sprite.spritecollide(self, self.game.all_walls, False)
+        if hits_wall:
+            self.kill()
