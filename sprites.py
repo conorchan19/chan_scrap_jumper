@@ -149,7 +149,6 @@ class Player(Sprite):
                     self.cd.start()
                     if self.health <= 0:
                         self.kill()
-
     def update(self):
         self.get_keys()
         # handles animation

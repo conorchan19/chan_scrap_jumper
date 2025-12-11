@@ -101,8 +101,10 @@ class Game:
         # creates a countdown timer
         self.all_sprites.update()
         # goes to level 2
-        if self.player.coins >= 10:
+        self.coin_total = 0 + self.player.coins
+        if self.coin_total >= 10:
             self.load_level("level2.txt")
+        # goes to game over screen
         if self.player.health <= 0:
             self.load_level("GameOver.txt")
         countdown = 10
@@ -124,8 +126,8 @@ class Game:
     def draw(self):
         # calls on draw_text
         self.screen.fill(WHITE)
-        self.draw_text(self.screen, "Health: " + str(self.player.health), 24, BLACK, 100, 100)
-        self.draw_text(self.screen, "Coins: " + str(self.player.coins), 24, BLACK, 400, 400)
+        self.draw_text(self.screen, "Lives: " + str(self.player.health), 24, BLACK, 100, 100)
+        self.draw_text(self.screen, "Coins: " + str(self.coin_total), 24, BLACK, 400, 400)
       #  self.draw_text(self.screen, str(self.time), 24, BLACK, 100, 400)
         self.all_sprites.draw(self.screen)
         pg.display.flip()
