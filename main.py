@@ -24,6 +24,8 @@ class Game:
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption("Conor Chan's awesome game!!!!!")
         self.playing = True
+        self.coins = 0
+        self.level = 1
     # sets up a game folder directory path using the current folder containg this file
     # gives the Game class a map property which use the Map class to parse the level1.txt file
     def load_data(self):
@@ -48,8 +50,6 @@ class Game:
             for col, tile in enumerate(tiles):
                 if tile == "1":
                     Wall(self, col, row, "")
-                elif tile == '2':
-                    Wall(self, col, row, "moveable")
                 elif tile == "C":
                     Coin(self, col, row)
                 elif tile == "P":
@@ -77,6 +77,9 @@ class Game:
                 print("I can get input from mousey mouse mouse")
     def load_level(self, level):
         self.map = Map(path.join(self.game_folder, level))
+        # wipes data
+        for sprite in self.all_sprites:
+            sprite.kill()
         # clear existing sprites
         self.all_sprites = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
@@ -101,9 +104,12 @@ class Game:
         # creates a countdown timer
         self.all_sprites.update()
         # goes to level 2
-        self.coin_total = 0 + self.player.coins
-        if self.coin_total >= 10:
+        if self.level == 1 and self.coins == 10:
+            self.level = 2
             self.load_level("level2.txt")
+        if self.level == 2 and self.coins == 25:
+            self.level = 3
+            self.load_level("level3.txt")
         # goes to game over screen
         if self.player.health <= 0:
             self.load_level("GameOver.txt")
@@ -127,7 +133,7 @@ class Game:
         # calls on draw_text
         self.screen.fill(WHITE)
         self.draw_text(self.screen, "Lives: " + str(self.player.health), 24, BLACK, 100, 100)
-        self.draw_text(self.screen, "Coins: " + str(self.coin_total), 24, BLACK, 400, 400)
+        self.draw_text(self.screen, "Coins: " + str(self.coins), 24, BLACK, 400, 400)
       #  self.draw_text(self.screen, str(self.time), 24, BLACK, 100, 400)
         self.all_sprites.draw(self.screen)
         pg.display.flip()

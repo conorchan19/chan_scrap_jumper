@@ -32,8 +32,7 @@ class Player(Sprite):
         self.pos = vec(x, y) * TILESIZE[0]
         # speed
         self.speed = 250
-        # coins
-        self.coins = 0
+
         # cooldown
         self.cd = Cooldown(1000)
         # health
@@ -142,7 +141,7 @@ class Player(Sprite):
         if hits: 
             # collides with coins
             if str(hits[0].__class__.__name__) == "Coin":
-                self.coins += 1
+                self.game.coins += 1
             if str(hits[0].__class__.__name__) == "PewPew":
                 if self.cd.ready():
                     self.health -= 1
@@ -167,6 +166,7 @@ class Player(Sprite):
 
 class Mob(Sprite):
     def __init__(self, game, x, y):
+        self.game = game
         self.groups = game.all_sprites, game.all_mobs
         Sprite.__init__(self, self.groups)
         self.game = game
@@ -257,10 +257,10 @@ class Mob(Sprite):
 
 class Coin(Sprite):
     def __init__(self, game, x, y):
+        self.game = game
         self.groups = game.all_sprites, game.all_coins
         Sprite.__init__(self, self.groups)
         # creates the coin
-        self.game = game
         # sprite
         self.image = pg.Surface((32, 32))
         self.image = game.coin_img
@@ -304,10 +304,8 @@ class PewPew(Sprite):
         super().__init__(game.all_sprites, game.all_pewpews)
         self.game = game
         self.groups = game.all_sprites, game.all_pewpews
-        Sprite.__init__(self, self.groups)
         # creates the projectile
-        Sprite.__init__(self)
-        self.game = game
+        Sprite.__init__(self, self.groups)
         # how big the projectile is
         self.image = pg.Surface((16, 16))
         # projectile color
