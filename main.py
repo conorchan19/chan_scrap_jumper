@@ -110,6 +110,9 @@ class Game:
         if self.level == 2 and self.coins == 25:
             self.level = 3
             self.load_level("level3.txt")
+        if self.level == 3 and self.coins == 45:
+            self.level = 4
+            self.load_level("win.txt")
         # goes to game over screen
         if self.player.health <= 0:
             self.load_level("GameOver.txt")
