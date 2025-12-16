@@ -32,7 +32,6 @@ class Player(Sprite):
         self.pos = vec(x, y) * TILESIZE[0]
         # speed
         self.speed = 250
-
         # cooldown
         self.cd = Cooldown(1000)
         # health
@@ -55,11 +54,9 @@ class Player(Sprite):
         self.rect.y += 1
         hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
         self.rect.y -= 1
-
         # if touching ground, ensure jump_count is reset
         if hits:
             self.jump_count = 0
-
         # allow jump if we haven't exceeded max jumps
         if self.jump_count < self.jump_max:
             self.vel.y = -self.jump_strength
@@ -114,14 +111,10 @@ class Player(Sprite):
             hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
             if hits:
                 if self.vel.x > 0:
-                    # detects if the wall is moveable
-                    if hits[0].state == "moveable":
-                        print("i hit a moveable block...")
-                    # moves if the wall is moveable
-                        hits[0].pos.x += self.vel.x
-                    else:
-                        self.pos.x = hits[0].rect.left - self.rect.width
+                    # wall on right
+                    self.pos.x = hits[0].rect.left - self.rect.width
                 if self.vel.x < 0:
+                    # wall on left
                     self.pos.x = hits[0].rect.right
                 self.vel.x = 0
                 self.rect.x = self.pos.x
@@ -129,9 +122,11 @@ class Player(Sprite):
             hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
             if hits:
                 if self.vel.y > 0:
+                    # wall below
                     self.pos.y = hits[0].rect.top - self.rect.height
                     self.jump_count = 0
                 if self.vel.y < 0:
+                    # wall above
                     self.pos.y = hits[0].rect.bottom
                 self.vel.y = 0
                 self.rect.y = self.pos.y
@@ -142,6 +137,7 @@ class Player(Sprite):
             # collides with coins
             if str(hits[0].__class__.__name__) == "Coin":
                 self.game.coins += 1
+            # collides with pewpews
             if str(hits[0].__class__.__name__) == "PewPew":
                 if self.cd.ready():
                     self.health -= 1
@@ -193,6 +189,7 @@ class Mob(Sprite):
         self.last_update = 0
         self.current_frame = 0
     def load_images(self):
+        # loads images for animation
         self.standing_frames = [self.sprite_sheet.get_image(0, 0, 32, 32),
                                 self.sprite_sheet.get_image(0, 32, 32, 32)]
         # sets colorkey for transparency and scale to TILESIZE
@@ -201,6 +198,7 @@ class Mob(Sprite):
             img = pg.transform.scale(frame, TILESIZE)
             self.standing_frames[i] = img
     def shoot(self):
+        # mob shooting behavior
         if self.shoot_cooldown.ready():
             self.dir = choice([(1,0), (-1,0), (0,1), (0,-1)])
             # move bullet outside shooter
@@ -226,8 +224,10 @@ class Mob(Sprite):
             hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
             if hits:
                 if self.vel.x > 0:
+                    # wall on right
                     self.pos.x = hits[0].rect.left - self.rect.width
                 if self.vel.x < 0:
+                    # wall on left
                     self.pos.x = hits[0].rect.right
                 # self.vel.x = 0
                 self.rect.x = self.pos.x
@@ -237,8 +237,10 @@ class Mob(Sprite):
             hits = pg.sprite.spritecollide(self, self.game.all_walls, False)
             if hits:
                 if self.vel.y > 0:
+                    # wall below
                     self.pos.y = hits[0].rect.top - self.rect.height
                 if self.vel.y < 0:
+                    # wall above
                     self.pos.y = hits[0].rect.bottom
                 # self.vel.y = 0
                 self.rect.y = self.pos.y
@@ -284,7 +286,7 @@ class Wall(Sprite):
     def __init__(self, game, x, y, state):
         self.groups = game.all_sprites, game.all_walls
         Sprite.__init__(self, self.groups)
-        # creats the wall
+        # creates the wall
         self.game = game
         self.image = pg.Surface(TILESIZE)
         self.image.fill(GREY)

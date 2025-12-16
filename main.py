@@ -1,4 +1,7 @@
-# Created by Conor Chan with the help of Chat GPT
+# Created by Conor Chan with the help of Chat GPT and Mr. Cozort's class code
+# Goal: create a top-down shooter game where the player collects coins and avoids enemies
+# Rules: player collects coins to advance levels, and avoid enemies, player has three lives
+# Freedom: player can move in 4 directions and double jump
 # import necessary modules
 # core game loop
 # input
@@ -29,9 +32,11 @@ class Game:
     # sets up a game folder directory path using the current folder containg this file
     # gives the Game class a map property which use the Map class to parse the level1.txt file
     def load_data(self):
+        # load game data
         self.game_folder = path.dirname(__file__)
         self.map = Map(path.join(self.game_folder, "level1.txt"))
         self.img_folder = path.join(self.game_folder, "images")
+        # load character images
         self.player_img = pg.image.load(path.join(self.img_folder, "player.png")).convert_alpha()
         self.player_img_inv = pg.image.load(path.join(self.img_folder, 'player.png')).convert_alpha()
         self.coin_img = pg.image.load(path.join(self.img_folder, "Brr_Brr.png")).convert_alpha()
@@ -71,16 +76,13 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 # breaks the code and gets rid of screen
-                print("this is happening")
                 self.playing = False
-            if event.type == pg.MOUSEBUTTONDOWN:
-                print("I can get input from mousey mouse mouse")
     def load_level(self, level):
         self.map = Map(path.join(self.game_folder, level))
         # wipes data
         for sprite in self.all_sprites:
             sprite.kill()
-        # clear existing sprites
+        # recreate sprite groups
         self.all_sprites = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_coins = pg.sprite.Group()
